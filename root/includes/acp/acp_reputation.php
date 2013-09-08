@@ -23,6 +23,7 @@ class acp_reputation
 {
 	var $u_action;
 	var $max_rep_id;
+	var $max_user_id;
 	var $step = 1000;
 
 	function main($id, $mode)
@@ -52,6 +53,7 @@ class acp_reputation
 					$start = request_var('start', 0);
 
 					$this->max_rep_id = $this->get_max_rep_id();
+					$this->max_user_id = $this->get_max_user_id();
 
 					switch ($step_sync)
 					{
@@ -187,7 +189,7 @@ class acp_reputation
 								{
 									$reps_ids[] = $row['rep_id'];
 								}
-								if (!$config['rs_max_power_ban'] && !$config['rs_enable_ban'] && ($row['action'] == 4))
+								if (!$config['rs_max_power_ban'] && ($row['action'] == 4))
 								{
 									$reps_ids[] = $row['rep_id'];
 								}
@@ -306,7 +308,7 @@ class acp_reputation
 
 							if ($start == 0) $db->sql_query('UPDATE ' . USERS_TABLE . ' SET user_reputation = 0');
 
-							while (still_on_time() && $start <= $this->max_rep_id)
+							while (still_on_time() && $start <= $this->max_user_id)
 							{
 								$sql = 'SELECT SUM(point) AS total_points, rep_to
 									FROM ' . REPUTATIONS_TABLE . '
@@ -344,7 +346,7 @@ class acp_reputation
 								$start += $this->step;
 							}
 
-							if ($start <= $this->max_rep_id)
+							if ($start <= $this->max_user_id)
 							{
 								meta_refresh(1, append_sid($this->u_action . '&amp;action=resync&amp;start=' . $start));
 								return;
@@ -1025,6 +1027,19 @@ class acp_reputation
 		$db->sql_freeresult($result);
 
 		return $max_rep_id;
+	}
+
+	function get_max_user_id()
+	{
+		global $db;
+
+		$sql = 'SELECT MAX(user_id) as max_user_id
+			FROM ' . USERS_TABLE;
+		$result = $db->sql_query($sql);
+		$max_user_id = (int) $db->sql_fetchfield('max_user_id');
+		$db->sql_freeresult($result);
+
+		return $max_user_id;
 	}
 
 	function post_rating($value, $key)
