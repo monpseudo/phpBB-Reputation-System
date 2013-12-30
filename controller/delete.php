@@ -113,6 +113,11 @@ class delete
 			$this->reputation_manager->reputation_response($json_data, $this->is_ajax);
 		}
 
+		if ($this->request->is_set_post('cancel'))
+		{
+			exit;
+		}
+
 		if ($this->auth->acl_gets('m_rs_moderate') || ($row['rep_from'] == $this->user->data['user_id'] && $this->auth->acl_get('u_rs_delete')))
 		{
 			if ($this->is_ajax)
@@ -181,12 +186,12 @@ class delete
 
 		switch ($mode)
 		{
-			if ($this->request->is_set_post('cancel'))
-			{
-				exit
-			}
-
 			case 'post':
+				if ($this->request->is_set_post('cancel'))
+				{
+					exit;
+				}
+
 				if ($this->is_ajax)
 				{
 					$sql = 'SELECT rep_to, post_id
@@ -233,7 +238,7 @@ class delete
 			case 'user':
 				if ($this->request->is_set_post('cancel'))
 				{
-					exit
+					exit;
 				}
 
 				$post_ids = array();
