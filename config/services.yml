@@ -97,12 +97,11 @@ services:
     reputation.delete.controller:
         class: pico88\reputation\controller\delete
         arguments:
-            - %core.root_path%
-            - %core.php_ext%
-            - @service_container
             - @auth
             - @config
             - @dbal.conn
-            - @template
+            - @request
             - @user
-            - @controller.helper
+            - @reputation.display
+            - @reputation.manager
+            - %tables.reputations%

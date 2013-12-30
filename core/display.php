@@ -39,6 +39,14 @@ class display
 	protected $reputation_helper;
 
 	/**
+	* Constants for avatar dimensions (width and height)
+	* small = 40px
+	* medium = 60 px
+	*/
+	const SMALL = 40;
+	const MEDIUM = 60;
+
+	/**
 	* Constructor
 	* NOTE: The parameters of this method must match in order and type with
 	* the dependencies defined in the services.yml file for this service.
@@ -79,6 +87,21 @@ class display
 	/**
 	*
 	*/
+	static private function resize_avatar($is_ajax)
+	{
+		if ($is_ajax)
+		{
+			return self::SMALL;
+		}
+		else
+		{
+			return self::MEDIUM;
+		}
+	}
+
+	/**
+	*
+	*/
 	public function row($row, $is_ajax = false)
 	{
 		// Path to images folder
@@ -87,14 +110,12 @@ class display
 		$row['bbcode_options'] = OPTION_FLAG_BBCODE + OPTION_FLAG_SMILIES + OPTION_FLAG_LINKS;
 		$comment = (!empty($row['comment'])) ? generate_text_for_display($row['comment'], $row['bbcode_uid'], $row['bbcode_bitfield'], $row['bbcode_options']) : false;
 
-		$avatar_img = $row['user_avatar'] ? get_user_avatar($row['user_avatar'], $row['user_avatar_type'], ($row['user_avatar_width'] > $row['user_avatar_height']) ? 40 : (40 / $row['user_avatar_height']) * $row['user_avatar_width'], ($row['user_avatar_height'] > $row['user_avatar_width']) ? 40 : (40 / $row['user_avatar_width']) * $row['user_avatar_height']) : '<img src="' . $this->reputation_helper->path($images_path, $is_ajax) . 'no_avatar.gif" width="40px;" height="40px;" alt="" />';
+		// Display avatar if it is enabled
+		$avatar_dimensions = $this->resize_avatar($is_ajax);
+		$avatar_img = $row['user_avatar'] ? get_user_avatar($row['user_avatar'], $row['user_avatar_type'], ($row['user_avatar_width'] > $row['user_avatar_height']) ? $avatar_dimensions : ($avatar_dimensions / $row['user_avatar_height']) * $row['user_avatar_width'], ($row['user_avatar_height'] > $row['user_avatar_width']) ? $avatar_dimensions : ($avatar_dimensions / $row['user_avatar_width']) * $row['user_avatar_height']) : '<img src="' . $this->reputation_helper->path($images_path, $is_ajax) . 'no_avatar.gif" width="' . $avatar_dimensions . 'px;" height="' . $avatar_dimensions . 'px;" alt="" />';
 
-		// Generate url to post if need
-		$forum_id = (isset($row['forum_id'])) ? ('f=' . $row['forum_id'] . '&amp;') : '';
-		$post_subject = (empty($row['real_post_id'])) ? '<strong>' . $this->user->lang['RS_POST_DELETE'] . '</strong>' : $row['post_subject'] . ' [#p' . $row['post_id'] . ']';
-		$post_url = append_sid("{$this->phpbb_root_path}viewtopic.$this->php_ext", $forum_id . 'p=' . $row['post_id'] . '#p' . $row['post_id']);
-		$post_link = (!empty($row['real_post_id'])) ? ($this->auth->acl_get('f_read', $row['forum_id']) ? '- <a href="' . $post_url . '">' . $post_subject . '</a>' : '') : '';
-
+		// Generate post url if it is needed
+		$post_link = (isset($row['real_post_id'])) ? $this->generate_post_link($row['real_post_id'], $row['forum_id'], $row['post_subject']) : '';
 		$go_to_post = '';
 		if ($row['action'] == 1)
 		{
@@ -136,7 +157,7 @@ class display
 			'POINT_CLASS'		=> $this->config['rs_point_type'] ? '' : $point_class,
 
 			'U_GO_TO_POST'		=> $go_to_post,
-			'U_DELETE'			=> '',
+			'U_DELETE'			=> $this->reputation_helper->generate_url('reputation/delete/' . $row['rep_id'], $is_ajax),
 
 			'S_DELETE'			=> $can_delete,
 		));
@@ -145,20 +166,19 @@ class display
 	/**
 	*
 	*/
-	public function table_row($row)
+	public function table_row($row, $module = 'ucp')
 	{
 		$row['bbcode_options'] = OPTION_FLAG_BBCODE + OPTION_FLAG_SMILIES + OPTION_FLAG_LINKS;
 		$comment = (!empty($row['comment'])) ? generate_text_for_display($row['comment'], $row['bbcode_uid'], $row['bbcode_bitfield'], $row['bbcode_options']) : $this->user->lang['RS_NA'];
 
-		// Generate url to post if need
-		$forum_id = (isset($row['forum_id'])) ? ('f=' . $row['forum_id'] . '&amp;') : '';
-		$post_subject = (empty($row['real_post_id'])) ? '<strong>' . $this->user->lang['RS_POST_DELETE'] . '</strong>' : $row['post_subject'] . '[#p' . $row['post_id'] . ']';
-		$post_url = append_sid("{$this->phpbb_root_path}viewtopic.$this->php_ext", $forum_id . 'p=' . $row['post_id'] . '#p' . $row['post_id']);
-		$post_link = (!empty($row['real_post_id'])) ? '<br /><a href="' . $post_url. '">' . $post_subject . '</a>' : '<br />' . $post_subject;
+		// Generate post url if it is needed
+		$post_link = $this->generate_post_link($row['real_post_id'], $row['forum_id'], $row['post_subject']);
 
+		$go_to_post = '';
 		if ($row['action'] == 1)
 		{
-			$action = $this->user->lang['RS_POST_RATING'] . $post_link;
+			$action = $this->user->lang['RS_POST_RATING'];
+			$go_to_post = $post_link;
 		}
 		else if ($row['action'] == 2)
 		{
@@ -166,7 +186,8 @@ class display
 		}
 		else if ($row['action'] == 3)
 		{
-			$action = $this->user->lang['RS_ONLYPOST_RATING'] . $post_link;
+			$action = $this->user->lang['RS_ONLYPOST_RATING'];
+			$go_to_post = $post_link;
 		}
 
 		if ($row['point'] < 0)
@@ -181,15 +202,59 @@ class display
 			$point_class = 'positive';
 		}
 
-		$this->template->assign_block_vars('reputation', array(
+		if ($module == 'ucp')
+		{
+			$template_block_vars = array(
+				'USERNAME'		=> get_username_string('full', $row['rep_to'], $row['username'], $row['user_colour']),
+			);
+		}
+		else
+		{
+			$template_block_vars = array(
+				'USERNAME_FROM'		=> get_username_string('full', $row['rep_from'], $row['username_rep_from'], $row['user_colour_rep_from']),
+				'USERNAME_TO'		=> get_username_string('full', $row['rep_to'], $row['username_rep_to'], $row['user_colour_rep_to']),
+			);
+		}
+
+		$template_block_vars = array_merge($template_block_vars, array(
 			'REP_ID'			=> $row['rep_id'],
-			'USERNAME_FROM'		=> get_username_string('full', $row['rep_from'], $row['username_rep_from'], $row['user_colour_rep_from']),
-			'USERNAME_TO'		=> get_username_string('full', $row['rep_to'], $row['username_rep_to'], $row['user_colour_rep_to']),
 			'ACTION'			=> $action,
 			'TIME'				=> $this->user->format_date($row['time']),
 			'COMMENT' 			=> $comment,
 			'POINT_VALUE'		=> $this->config['rs_point_type'] ? $point_img : $row['point'],
 			'POINT_CLASS'		=> $this->config['rs_point_type'] ? 'neutral' : $point_class,
+
+			'U_POST'			=> $go_to_post,
 		));
+
+		$this->template->assign_block_vars('reputation', $template_block_vars);
+	}
+
+	/**
+	*
+	*/
+	private function generate_post_link($post_id, $forum_id, $post_subject)
+	{
+		// Post was deleted
+		if (!isset($post_subject) && !isset($post_id))
+		{
+			return '<strong>' . $this->user->lang['RS_POST_DELETE'] . '</strong>';
+		}
+
+		// Post exists
+		if (isset($post_id))
+		{
+			// Check forum read permission
+			if (!$this->auth->acl_get('f_read', $forum_id))
+			{
+				return;
+			}
+
+			// Prepare post url
+			$post_url = append_sid("{$this->phpbb_root_path}viewtopic.$this->php_ext", 'f=' . $forum_id . '&amp;p=' . $post_id . '#p' . $post_id);
+			$post_link = '<a href="' . $post_url . '">' . $post_subject . ' [#p' . $post_id . ']</a>';
+
+			return $post_link;
+		}
 	}
 }

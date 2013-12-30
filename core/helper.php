@@ -40,7 +40,7 @@ class helper
 	}
 
 	/**
-	* Generate a URL - depends on ajax request
+	* Generate an URL - depends on ajax request
 	* 
 	* @param string		$url		The url to go
 	* @param bool		$is_ajax	Is url using ajax: true or false
@@ -81,4 +81,15 @@ class helper
 			return $this->controller_helper->url($path);
 		}
 	}
+
+	/*public function cancel($page, $data)
+	{
+		switch ($page)
+		{
+			case 'viewtopic':
+				$redirect = append_sid("{$this->phpbb_root_path}viewtopic.$this->php_ext", 'f=' . $data['forum_id'] . '&amp;p=' . $data['post_id'] . '#p' . $data['post_id']);
+				return $redirect;
+			break;
+		}
+	}*/
 }

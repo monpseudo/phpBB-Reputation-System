@@ -100,7 +100,7 @@
 	<!-- BEGIN reputation -->
 	<tr class="<!-- IF reputation.S_ROW_COUNT is even -->bg1<!-- ELSE -->bg2<!-- ENDIF -->">
 		<td class="name">{reputation.USERNAME}</td>
-		<td class="name">{reputation.ACTION}</td>
+		<td class="name">{reputation.ACTION}<!-- IF reputation.U_POST --><br />{reputation.U_POST}<!-- ENDIF --></td>
 		<td class="name">{reputation.TIME}</td>
 		<!-- IF S_RS_COMMENT --><td class="info">{reputation.COMMENT}</td><!-- ENDIF -->
 		<td style="text-align: center;" class="vote_status_{reputation.POINT_CLASS}">{reputation.POINT_VALUE}</td>

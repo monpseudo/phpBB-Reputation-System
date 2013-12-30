@@ -67,7 +67,7 @@ class details
 	* @param string $php_ext PHP extension
 	* @param string $reputation_table Name of the table uses to store reputations
 	*/
-	public function __construct(\phpbb\auth\auth $auth, \phpbb\config\config $config, \phpbb\controller\helper $controller_helper,  \phpbb\db\driver\driver $db,\phpbb\request\request $request, \phpbb\template\template $template, \phpbb\user $user, $reputation_display, $reputation_helper, $reputation_power, $phpbb_root_path, $php_ext, $reputations_table)
+	public function __construct(\phpbb\auth\auth $auth, \phpbb\config\config $config, \phpbb\controller\helper $controller_helper,  \phpbb\db\driver\driver $db, \phpbb\request\request $request, \phpbb\template\template $template, \phpbb\user $user, $reputation_display, $reputation_helper, $reputation_power, $phpbb_root_path, $php_ext, $reputations_table)
 	{
 		$this->auth = $auth;
 		$this->config = $config;
@@ -317,6 +317,8 @@ class details
 			'U_SORT_ACTION'		=> $this->controller_helper->url('reputation/' . $uid . '/action/' . (($sort_key == 'action' && $sort_dir == 'asc') ? 'dsc' : 'asc')),
 			'U_SORT_POSTS'		=> $this->controller_helper->url('reputation/' . $uid . '/post/' . (($sort_key == 'post' && $sort_dir == 'asc') ? 'dsc' : 'asc')),
 
+			'U_CLEAR'			=> $this->reputation_helper->generate_url('reputation/clear/user/' . $uid, $this->is_ajax),
+
 			'POST_COUNT'		=> $post_count,
 			'USER_COUNT'		=> $user_count,
 			'POSITIVE_COUNT'	=> $positive_count,
@@ -397,7 +399,7 @@ class details
 		$order_by = $sort_key_sql[$sort_key] . ' ' . (($sort_dir == 'dsc') ? 'DESC' : 'ASC');
 
 		$sql_array = array(
-			'SELECT'	=> 'r.*, u.username, u.user_colour, u.user_avatar, u.user_avatar_type, u.user_avatar_width, u.user_avatar_height, u.user_reputation',
+			'SELECT'	=> 'r.rep_id, r.rep_from, r.action, r.time, r.point, r.comment, r.bbcode_uid, r.bbcode_bitfield, u.username, u.user_colour, u.user_avatar, u.user_avatar_type, u.user_avatar_width, u.user_avatar_height, u.user_reputation',
 			'FROM'		=> array($this->reputations_table => 'r'),
 			'LEFT_JOIN' => array(
 				array(
@@ -425,6 +427,8 @@ class details
 			'U_SORT_USERNAME'	=> $this->reputation_helper->generate_url('reputation/details/post/' . $post_id . '/username/' . (($sort_key == 'username' && $sort_dir == 'asc') ? 'dsc' : 'asc'), $this->is_ajax),
 			'U_SORT_TIME'		=> $this->reputation_helper->generate_url('reputation/details/post/' . $post_id . '/time/' . (($sort_key == 'time' && $sort_dir == 'asc') ? 'dsc' : 'asc'), $this->is_ajax),
 			'U_SORT_POINTS'		=> $this->reputation_helper->generate_url('reputation/details/post/' . $post_id . '/point/' . (($sort_key == 'point' && $sort_dir == 'asc') ? 'dsc' : 'asc'), $this->is_ajax),
+
+			'U_CLEAR'			=> $this->reputation_helper->generate_url('reputation/clear/post/' . $post_id, $this->is_ajax),
 
 			'S_RS_AVATAR'		=> $this->config['rs_display_avatar'] ? true : false,
 			'S_RS_COMMENT'		=> $this->config['rs_enable_comment'] ? true : false,
@@ -519,6 +523,8 @@ class details
 			'U_SORT_POINTS'		=> $this->reputation_helper->generate_url('reputation/details/user/' . $uid . '/point/' . (($sort_key == 'point' && $sort_dir == 'asc') ? 'dsc' : 'asc'), $this->is_ajax),
 			'U_SORT_ACTION'		=> $this->reputation_helper->generate_url('reputation/details/user/' . $uid . '/action/' . (($sort_key == 'action' && $sort_dir == 'asc') ? 'dsc' : 'asc'), $this->is_ajax),
 			'U_SORT_POSTS'		=> $this->reputation_helper->generate_url('reputation/details/user/' . $uid . '/post/' . (($sort_key == 'post' && $sort_dir == 'asc') ? 'dsc' : 'asc'), $this->is_ajax),
+
+			'U_CLEAR'			=> $this->reputation_helper->generate_url('reputation/clear/user/' . $uid, $this->is_ajax),
 
 			'L_RS_USER_REPUTATION'	=> $this->user->lang('RS_USER_REPUTATION', get_username_string('username', $user_row['user_id'], $user_row['username'], $user_row['user_colour'])),
 

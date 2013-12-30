@@ -25,6 +25,7 @@ class reputation_module
 
 		$submit = (isset($_POST['submit']) || isset($_POST['enable_reputation'])) ? true : false;
 		$action = request_var('action', '');
+		$reputation_table = $phpbb_container->getParameter('tables.reputations');
 
 		switch ($mode)
 		{
@@ -38,8 +39,6 @@ class reputation_module
 				if ($action == 'resync')
 				{
 					$start = request_var('start', 0);
-
-					$reputation_table = $phpbb_container->getParameter('tables.reputations');
 
 					$this->max_rep_id = $this->get_max_rep_id($reputation_table);
 

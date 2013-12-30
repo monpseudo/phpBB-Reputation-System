@@ -37,15 +37,14 @@ reputation_userrating_controller:
         uid:  \d+
 
 reputation_delete_controller:
-    pattern: /reputation/delete/{mode}/{rep_id}
+    pattern: /reputation/delete/{rep_id}
     defaults: { _controller: reputation.delete.controller:delete }
     requirements:
-        mode: post|user
         rep_id: \d+
 
 reputation_clear_controller:
-    pattern: /reputation/clear/{mode}/{id}
-    defaults: { _controller: reputation.delete.controller:delete }
+    pattern: /reputation/clear/{mode}/{item_id}
+    defaults: { _controller: reputation.delete.controller:clear }
     requirements:
         mode: post|user
-        id: \d+
+        item_id: \d+

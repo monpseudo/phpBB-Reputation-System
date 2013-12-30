@@ -114,14 +114,7 @@ class reputation extends \phpbb\notification\type\base
 	*/
 	public function get_email_template_variables()
 	{
-		$user_data = $this->user_loader->get_user($this->get_data('user_from'));
-
-		return array(
-			'AUTHOR_NAME'				=> htmlspecialchars_decode($user_data['username']),
-			//'SUBJECT'					=> htmlspecialchars_decode(censor_text($this->get_data('message_subject'))),
-
-			'U_VIEW_MESSAGE'			=> generate_board_url() . '/ucp.' . $this->php_ext . "?i=pm&mode=view&p={$this->item_id}",
-		);
+		return array();
 	}
 
 	/**
@@ -131,7 +124,7 @@ class reputation extends \phpbb\notification\type\base
 	*/
 	public function get_url()
 	{
-		return append_sid($this->phpbb_root_path . 'ucp.' . $this->php_ext, "i=reputation&amp;mode=list");
+		return append_sid($this->phpbb_root_path . 'reputation/' . $this->user->data['user_id']);
 	}
 
 	/**

@@ -20,14 +20,14 @@ class manager
 	protected $template;
 	protected $cache;
 	protected $container;
-	protected $reputation_table;
+	protected $reputations_table;
 
 	private $power;
 
 	/**
 	* class constructor method
 	*/
-	public function __construct($phpbb_root_path, $php_ext, \phpbb\config\config $config, \phpbb\db\driver\driver $db, $user, $auth, \phpbb\template\template $template, \phpbb\cache\driver\driver_interface $cache, $container, $reputation_table)
+	public function __construct($phpbb_root_path, $php_ext, \phpbb\config\config $config, \phpbb\db\driver\driver $db, $user, $auth, \phpbb\template\template $template, \phpbb\cache\driver\driver_interface $cache, $container, $reputations_table)
 	{
 		$this->phpbb_root_path = $phpbb_root_path;
 		$this->php_ext = $php_ext;
@@ -39,37 +39,36 @@ class manager
 		$this->template = $template;
 		$this->cache = $cache;
 		$this->container = $container;
-		$this->reputation_table = $reputation_table;
+		$this->reputations_table = $reputations_table;
 	}
 
+	/*
+	*
+	*/
 	private function select_mode($mode)
 	{
-		if ($mode == 'post')
+		switch ($mode)
 		{
-			$action = 1;
+			case 'post':
+				return 1;
+			case 'user':
+				return 2;
+			case 'onlypost':
+				return 3;
 		}
-		else if ($mode == 'user')
-		{
-			$action = 2;
-		}
-		else if ($mode == 'onlypost')
-		{
-			$action = 3;
-		}
-
-		return $action;
 	}
 
 	/**
 	* Main function for actual recording of voting points.
+	*
 	* @param int $to user_id who gets the rating
 	* @param int $post_id Option post id
 	* @param string $comment
 	* @param int $point Actual value set by the voting user
-	* @param string $mode
+	* @param string $mode Default: post
 	* @return bool
 	*/
-	public function give_point($to, $post_id = 0, $comment, $point, $mode = 'post')
+	public function store_reputation($to, $post_id = 0, $comment, $point, $mode = 'post')
 	{
 		// Firstly, select mode
 		$action = $this->select_mode($mode);
@@ -111,7 +110,7 @@ class manager
 			));
 		}
 
-		$this->db->sql_query('INSERT INTO ' . $this->reputation_table . ' ' . $this->db->sql_build_array('INSERT', $sql_data));
+		$this->db->sql_query('INSERT INTO ' . $this->reputations_table . ' ' . $this->db->sql_build_array('INSERT', $sql_data));
 
 		// Update post reputation
 		if ($post_id)
@@ -170,7 +169,8 @@ class manager
 		return true;
 	}
 
-	/** Function responsible for deleting reputation
+	/**
+	* Function responsible for deleting reputation
 	* @param int $id reputation ID
 	* @return bool
 	*/
@@ -183,7 +183,7 @@ class manager
 
 		$sql_array = array(
 			'SELECT'	=> 'r.rep_to, r.action, r.time, r.post_id, r.point, u.username, u.user_rep_last',
-			'FROM'		=> array(REPUTATIONS_TABLE => 'r'),
+			'FROM'		=> array($this->reputations_table => 'r'),
 			'LEFT_JOIN'	=> array(
 				array(
 					'FROM'	=> array(USERS_TABLE => 'u'),
@@ -205,7 +205,7 @@ class manager
 			$this->db->sql_query($sql);
 		}
 
-		$sql = 'DELETE FROM ' . REPUTATIONS_TABLE . "
+		$sql = 'DELETE FROM ' . $this->reputations_table . "
 			WHERE rep_id = $id";
 		$this->db->sql_query($sql);
 
@@ -227,7 +227,7 @@ class manager
 		if ($row['time'] >= $row['user_rep_last'])
 		{
 			$sql = 'SELECT COUNT(rep_id) AS new_reps
-				FROM ' . $this->reputation_table . "
+				FROM ' . $this->reputations_table . "
 				WHERE rep_to = {$row['rep_to']}
 					AND time >= {$row['user_rep_last']}";
 			$result = $this->db->sql_query($sql);
@@ -258,10 +258,24 @@ class manager
 			return;
 		}
 
+		$sql_where = (($mode == 'post')? 'post_id = ' : 'rep_to = ') . $id;
+
+		$sql = 'SELECT rep_id
+			FROM ' . $this->reputations_table . "
+			WHERE $sql_where";
+		$result = $this->db->sql_query($sql);
+		$row = $this->db->sql_fetchrow($result);
+		$this->db->sql_freeresult($result);
+
+		if (!$row)
+		{
+			return;
+		}
+
 		if ($mode == 'post')
 		{
 			$sql = 'SELECT SUM(point) AS user_points, rep_to, action
-				FROM ' . $this->reputation_table . "
+				FROM ' . $this->reputations_table . "
 				WHERE post_id = $id";
 			$result = $this->db->sql_query($sql);
 			$point = $this->db->sql_fetchrow($result);
@@ -272,7 +286,7 @@ class manager
 				WHERE post_id = $id";
 			$this->db->sql_query($sql);
 
-			$sql = 'DELETE FROM ' . $this->reputation_table . "
+			$sql = 'DELETE FROM ' . $this->reputations_table . "
 				WHERE post_id = $id";
 			$this->db->sql_query($sql);
 
@@ -314,7 +328,7 @@ class manager
 				WHERE ' . $this->db->sql_in_set('post_id', $post_ids, false, true);
 			$this->db->sql_query($sql);
 
-			$sql = 'DELETE FROM ' . REPUTATIONS_TABLE . "
+			$sql = 'DELETE FROM ' . $this->reputations_table . "
 				WHERE rep_to = $id";
 			$this->db->sql_query($sql);
 
@@ -344,7 +358,7 @@ class manager
 	private function check_max_min($user_id)
 	{
 		$sql = 'SELECT SUM(point) AS points
-			FROM ' . REPUTATIONS_TABLE . "
+			FROM ' . $this->reputations_table . "
 			WHERE action != 5
 				AND rep_to = $user_id";
 		$result = $this->db->sql_query($sql);
@@ -393,7 +407,8 @@ class manager
 		}
 	}
 
-	/** Return post reputation
+	/**
+	* Return post reputation
 	* @param $post_id ID of a post
 	*/
 	public function get_post_reputation($post_id)
@@ -408,7 +423,8 @@ class manager
 		return $row['post_reputation'];
 	}
 
-	/** Return user reputation
+	/**
+	* Return user reputation
 	* @param $user_id user ID
 	*/
 	public function get_user_reputation($user_id)
@@ -436,7 +452,7 @@ class manager
 		$total_reps = $same_user = 0;
 
 		$sql = 'SELECT rep_from
-			FROM ' . $this->reputation_table . "
+			FROM ' . $this->reputations_table . "
 			WHERE rep_to = $user_id
 				AND (action = 1 OR action = 2)";
 		$result = $this->db->sql_query($sql);
@@ -467,6 +483,7 @@ class manager
 	*/
 	public function reputation_response($data, $ajax = true)
 	{
+		$response = '';
 		if ($ajax)
 		{
 			$json_response = new \phpbb\json_response();

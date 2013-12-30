@@ -32,12 +32,6 @@ class rating
 	/** @var \phpbb\user */
 	protected $user;
 
-	/** @var string */
-	protected $root_path;
-
-	/** @var string */
-	protected $php_ext;
-
 	/** @ reputation display */
 	protected $reputation_display;
 
@@ -116,7 +110,7 @@ class rating
 	*/
 	public function post($mode, $post_id)
 	{
-		//Let get some data
+		// Let get some data
 		$sql_array = array(
 			'SELECT'	=> 'u.user_type, u.username, u.user_colour, p.forum_id, p.poster_id, p.post_username , f.enable_reputation, r.rep_id, r.point',
 			'FROM'		=> array(
@@ -141,7 +135,7 @@ class rating
 		$row = $this->db->sql_fetchrow($result);
 		$this->db->sql_freeresult($result);
 
-		//We couldn't find this post. May be it was deleted while user voted?
+		// We couldn't find this post. May be it was deleted while user voted?
 		if (!$row)
 		{
 			$json_data = array(
@@ -150,7 +144,16 @@ class rating
 			$this->reputation_manager->reputation_response($json_data, $this->is_ajax);
 		}
 
-		//Fire error if it's disabled and exit
+		// Cancel action
+		if ($this->request->is_set_post('cancel'))
+		{
+			/** TO-DO
+			$redirect = $this->reputation_helper->cancel('viewtopic', array('forum_id' => $row['forum_id'], 'post_id' => $post_id));
+			redirect($redirect);*/
+			exit;
+		}
+
+		// Fire error if it's disabled and exit
 		if (!$this->config['rs_post_rating'] || !$this->config['rs_negative_point'] && $mode == 'negative' || !$row['enable_reputation'])
 		{
 			$json_data = array(
@@ -159,7 +162,7 @@ class rating
 			$this->reputation_manager->reputation_response($json_data, $this->is_ajax);
 		}
 
-		//No anonymous voting is allowed
+		// No anonymous voting is allowed
 		if ($row['user_type'] == USER_IGNORE)
 		{
 			$json_data = array(
@@ -168,7 +171,7 @@ class rating
 			$this->reputation_manager->reputation_response($json_data, $this->is_ajax);
 		}
 
-		//You can not vote for your posts
+		// You can not vote for your posts
 		if ($row['poster_id'] == $this->user->data['user_id'])
 		{
 			$json_data = array(
@@ -186,7 +189,7 @@ class rating
 			$this->reputation_manager->reputation_response($json_data, $this->is_ajax);
 		}
 
-		//Check if user is allowed to vote
+		// Check if user is allowed to vote
 		if (!$this->auth->acl_get('f_rs_give', $row['forum_id']) || !$this->auth->acl_get('f_rs_give_negative', $row['forum_id']) && $mode == 'negative' || !$this->auth->acl_get('u_rs_ratepost'))
 		{
 			$json_data = array(
@@ -378,7 +381,7 @@ class rating
 
 			$post_rating_mode = ($row['enable_reputation'] == 1) ? 'post' : 'onlypost';
 
-			if ($this->reputation_manager->give_point($row['poster_id'], $post_id, $comment, $points, $post_rating_mode))
+			if ($this->reputation_manager->store_reputation($row['poster_id'], $post_id, $comment, $points, $post_rating_mode))
 			{
 				// Generate JSON reply
 				$post_reputation = $this->reputation_manager->get_post_reputation($post_id);
@@ -439,6 +442,12 @@ class rating
 				'error_msg' => $this->user->lang['RS_NO_USER_ID']
 			);
 			$this->reputation_manager->reputation_response($json_data, $this->is_ajax);
+		}
+
+		// Cancel action
+		if ($this->request->is_set_post('cancel'))
+		{
+			exit;
 		}
 
 		if ($row['user_type'] == USER_IGNORE)
@@ -641,7 +650,7 @@ class rating
 				$this->reputation_manager->reputation_response($json_data, $this->is_ajax);
 			}
 
-			if ($this->reputation_manager->give_point($uid, 0, $comment, $points, 'user'))
+			if ($this->reputation_manager->store_reputation($uid, 0, $comment, $points, 'user'))
 			{
 				// If it's an AJAX request, generate JSON reply
 				$user_reputation = $this->reputation_manager->get_user_reputation($uid);

@@ -122,7 +122,7 @@ class reputation_module
 
 				while ($row = $db->sql_fetchrow($result))
 				{
-					$phpbb_container->get('reputation.display')->row($row);
+					$phpbb_container->get('reputation.display')->row($row, 'ucp');
 				}
 				$db->sql_freeresult($result);
 
@@ -245,7 +245,7 @@ class reputation_module
 
 					while ($row = $db->sql_fetchrow($result))
 					{
-						$phpbb_container->get('reputation.display')->row($row);
+						$phpbb_container->get('reputation.display')->table_row($row, 'ucp');
 					}
 					$db->sql_freeresult($result);
 					unset($reputation_ids, $row);
@@ -362,9 +362,10 @@ class reputation_module
 
 					while ($row = $db->sql_fetchrow($result))
 					{
-						$phpbb_container->get('reputation.display')->row($row);
+						$phpbb_container->get('reputation.display')->table_row($row, 'ucp');
 					}
 					$db->sql_freeresult($result);
+
 					unset($reputation_ids, $row);
 				}
 

@@ -7,10 +7,16 @@
 */
 
 $(document).ready(function() {
-	var arr = [8790, 8792, 8799];
+	/*var arr = [1, 3];
 	$.each(arr, function() {
 		$("#p" + this).addClass( "highlight" );
-	});
+	});*/
+
+	// Działa :)
+	/*
+	$('.positive').each(function() {
+		$(this).parents('.post').addClass("hidden");
+	});*/
 });
 
 $('body').click(function(){
@@ -25,49 +31,36 @@ $('#reputation-popup').click(function(e){
 });
 
 $('#rate-user').click(function(event){
-	event.stopPropagation()
-	event.preventDefault();
-
 	show_popup(this.href, event, 'user');
 });
 
 $('.rate-good-icon a').click(function(event){
-	event.stopPropagation()
-	event.preventDefault();
-
 	show_popup(this.href, event, 'post');
 });
 
 $('.rate-bad-icon a').click(function(event){
-	event.stopPropagation()
-	event.preventDefault();
-
 	show_popup(this.href, event, 'post');
 });
 
 $('.post-reputation a').click(function(event){
-	event.stopPropagation()
-	event.preventDefault();
-
 	show_popup(this.href, event, 'details');
 });
 
 $('.user-reputation a').click(function(event){
-	event.stopPropagation()
-	event.preventDefault();
-
 	show_popup(this.href, event, 'details');
 });
 
+// Save vote
 $('#reputation-popup').on("click", '.button1', function(event){
-	event.stopPropagation()
+	event.stopPropagation();
 	event.preventDefault();
 
 	submit_action($('#reputation-popup > form').attr('action'), 'post');
 });
 
+// Cancel rating
 $('#reputation-popup').on("click", '.button2', function(event){
-	event.stopPropagation()
+	event.stopPropagation();
 	event.preventDefault();
 
 	$('#reputation-popup').fadeOut('fast').queue(function () {
@@ -76,11 +69,38 @@ $('#reputation-popup').on("click", '.button2', function(event){
 	});
 });
 
-$('#reputation-popup').on("click", '.footer-popup a', function(event){
-	event.stopPropagation()
+// Sort reputation by
+$('#reputation-popup').on("click", 'a.sort_order', function(event){
+	event.stopPropagation();
 	event.preventDefault();
 
 	sort_order_by(this.href)
+});
+
+// Delete reputation
+$('#reputation-popup').on("click", '.reputation-delete', function(event){
+	event.stopPropagation();
+	event.preventDefault();
+
+	var confirmation = $('a.reputation-delete').attr('data-lang-confirm');
+
+	if (confirm(confirmation))
+	{
+		submit_action(this.href, 'delete')
+	}
+});
+
+// Clear reputation
+$('#reputation-popup').on("click", '.clear-reputation', function(event){
+	event.stopPropagation();
+	event.preventDefault();
+
+	var confirmation = $('a.clear-reputation').attr('data-lang-confirm');
+
+	if (confirm(confirmation))
+	{
+		submit_action(this.href, 'clear')
+	}
 });
 
 /**
@@ -88,6 +108,9 @@ $('#reputation-popup').on("click", '.footer-popup a', function(event){
 */
 function show_popup(href, event, mode)
 {
+	event.stopPropagation();
+	event.preventDefault();
+
 	if (!requestSent)
 	{
 		requestSent = true;
@@ -157,6 +180,9 @@ function submit_action(href, mode)
 		case 'user':
 			data = $('#reputation-popup form').serialize();
 		break;
+		default:
+			data = '';
+		break;
 	}
 
 	$.ajax({
@@ -214,78 +240,59 @@ function response(data, mode)
 				});
 			break;
 			case 'delete':
-				switch (c)
+				var post_id = data.post_id;
+				var poster_id = data.poster_id;
+				var rep_id = data.rep_id;
+
+				$('#r' + rep_id).hide('fast', function() {
+					$('#r' + rep_id).detach();
+					if ($('.reputation-list').length == 0)
+					{
+						$('#reputation-popup').fadeOut('fast').empty();
+					}
+				});
+				$('#profile' + poster_id + ' a').html(data.user_reputation);
+				$('#p' + post_id + ' .post-reputation a').text(data.post_reputation);
+				$('#p' + post_id + ' .post-reputation').removeClass('zero negative positive').addClass(data.reputation_class);
+
+				if (data.own_vote)
 				{
-					case 'post':
-						var post_id = a.post_id;
-						var poster_id = a.poster_id;
-						var rep_id = a.rep_id;
-
-						$('#r' + rep_id).hide('fast', function() {
-							$('#r' + rep_id).detach();
-							if ($('.reputation-list').length == 0)
-							{
-								$('#reputation-popup').fadeOut('fast').empty();
-							}
-						});
-						$('#profile' + poster_id + ' a').html(a.user_reputation);
-						$('#profile' + poster_id + ' .reputation-rank').html(a.reputation_rank);
-						$('#p' + post_id + ' .reputation a').text(a.post_reputation);
-						$('#p' + post_id + ' .reputation').removeClass('zero negative positive').addClass(a.reputation_class);
-
-						if (a.own_vote)
-						{
-							$('#p' + post_id + ' .post-reputation').removeClass('rated_good rated_bad');
-						}
-					break;
-					case 'user':
-						location.reload();
-					break;
+					$('#p' + post_id + ' .rate-good-icon').removeClass('rated_good rated_bad');
+					$('#p' + post_id + ' .rate-bad-icon').removeClass('rated_good rated_bad');
 				}
 			break;
 			case 'clear':
-				switch(c)
+				if (data.clear_post)
 				{
-					case 'post':
-						var post_id = a.post_id;
-						var poster_id = a.poster_id;
+					var post_id = data.post_id;
+					var poster_id = data.poster_id;
 
-						$('.reputation-list').slideUp(function() {
-							$('#reputation-popup').fadeOut('fast').empty();
-						});
-						$('#profile' + poster_id + ' .user-reputation a').html(a.user_reputation);
-						$('#profile' + poster_id + ' .reputation-rank').html(a.reputation_rank);
-						$('#p' + post_id + ' .reputation a').text(a.post_reputation);
-						$('#p' + post_id + ' .reputation').removeClass('zero negative positive').addClass(a.reputation_class);
-						$('#p' + post_id + ' .post-reputation').removeClass('rated_good rated_bad');
-						$('#p' + post_id).removeClass('highlight hidden');
-						$('#p' + post_id + ' #hideshow').detach();
-					break;
-					case 'user':
-						if (d == 'topic')
-						{
-							var post_ids = a.post_ids;
-							var poster_id = a.poster_id;
+					$('.reputation-list').slideUp(function() {
+						$('#reputation-popup').fadeOut('fast').empty();
+					});
+					$('#profile' + poster_id + ' a').html(data.user_reputation);
+					$('#p' + post_id + ' .post-reputation a').text(data.post_reputation);
+					$('#p' + post_id + ' .post-reputation').removeClass('neutral negative positive').addClass(data.reputation_class);
+					$('#p' + post_id + ' .rate-good-icon').removeClass('rated_good rated_bad');
+					$('#p' + post_id + ' .rate-bad-icon').removeClass('rated_good rated_bad');
+				}
+				else if (data.clear_user)
+				{
+					var post_ids = data.post_ids;
+					var poster_id = data.poster_id;
 
-							$('.reputation-list').slideUp(function() {
-								$('#reputation-popup').fadeOut('fast').empty();
-							});
-							$('#profile' + poster_id + ' .user-reputation a').html(a.user_reputation);
-							$('#profile' + poster_id + ' .reputation-rank').html(a.reputation_rank);
+					$('.reputation-list').slideUp(function() {
+						$('#reputation-popup').fadeOut('fast').empty();
+					});
+					$('#profile' + poster_id + ' a').html(data.user_reputation);
 
-							$.each(post_ids, function() { 
-								$('#p' + this + ' .reputation a').text(a.post_reputation);
-								$('#p' + this + ' .reputation').removeClass('zero negative positive').addClass(a.reputation_class);
-								$('#p' + this + ' .post-reputation').removeClass('rated_good rated_bad');
-								$('#p' + this).removeClass('highlight hidden');
-								$('#p' + this + ' #hideshow').detach();
-							});
-						}
-						else if (d == 'detail')
-						{
-							location.reload();
-						}
-					break;
+					$.each(post_ids, function() { 
+						$('#p' + post_ids + ' .post-reputation a').text(data.post_reputation);
+						$('#p' + post_ids + ' .post-reputation a').text(data.post_reputation);
+						$('#p' + post_ids + ' .post-reputation').removeClass('neutral negative positive').addClass(data.reputation_class);
+						$('#p' + post_ids + ' .rate-good-icon').removeClass('rated_good rated_bad');
+						$('#p' + post_ids + ' .rate-bad-icon').removeClass('rated_good rated_bad');
+					});
 				}
 			break;
 		}

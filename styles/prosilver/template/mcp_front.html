@@ -78,7 +78,7 @@
 	<tr class="<!-- IF reputation.S_ROW_COUNT is even -->bg1<!-- ELSE -->bg2<!-- ENDIF -->">
 		<!-- IF reputation.USERNAME_FROM --><td class="name">{reputation.USERNAME_FROM}</td><!-- ENDIF -->
 		<!-- IF reputation.USERNAME_TO --><td class="name">{reputation.USERNAME_TO}</td><!-- ENDIF -->
-		<td class="name">{reputation.ACTION}</td>
+		<td class="name">{reputation.ACTION}<!-- IF reputation.U_POST --><br />{reputation.U_POST}<!-- ENDIF --></td>
 		<td class="name">{reputation.TIME}</td>
 		<!-- IF reputation.COMMENT and COMMENT --><td class="info">{reputation.COMMENT}</td><!-- ENDIF -->
 		<td style="text-align: center;" class="vote_status_{reputation.POINT_CLASS}">{reputation.POINT_VALUE}</td>

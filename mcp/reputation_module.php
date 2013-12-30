@@ -113,7 +113,7 @@ class reputation_module
 				$db->sql_freeresult($result);
 
 				$sql = $db->sql_build_query('SELECT', array(
-					'SELECT'	=> 'u.username as username_rep_from, u.user_colour as user_colour_rep_from, ut.username as username_rep_to, ut.user_colour as user_colour_rep_to, ut.user_reputation, r.*, p.post_id AS real_post_id, p.forum_id, p.post_subject',
+					'SELECT'	=> 'r.*, u.username as username_rep_from, u.user_colour as user_colour_rep_from, ut.username as username_rep_to, ut.user_colour as user_colour_rep_to, ut.user_reputation, p.post_id AS real_post_id, p.forum_id, p.post_subject',
 					'FROM'		=> array($reputation_table => 'r'),
 					'LEFT_JOIN' => array(
 						array(
@@ -135,7 +135,7 @@ class reputation_module
 
 				while ($row = $db->sql_fetchrow($result))
 				{
-					$phpbb_container->get('reputation.display')->table_row($row);
+					$phpbb_container->get('reputation.display')->table_row($row, 'mcp');
 				}
 				$db->sql_freeresult($result);
 
@@ -267,7 +267,7 @@ class reputation_module
 
 					while ($row = $db->sql_fetchrow($result))
 					{
-						$phpbb_container->get('reputation.display')->table_row($row);
+						$phpbb_container->get('reputation.display')->table_row($row, 'mcp');
 					}
 					$db->sql_freeresult($result);
 

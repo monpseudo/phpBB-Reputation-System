@@ -32,7 +32,7 @@
 			<!-- IF S_RS_USER_RATING --><dt style="width: 50%;">{L_RS_USER_COUNT}:</dt> <dd style="width: 45%;">{USER_COUNT}</dd><!-- ENDIF -->
 			<dt style="width: 50%;">{L_RS_POSITIVE_COUNT}:</dt> <dd style="width: 45%;">{POSITIVE_COUNT} ({L_RS_POINTS}: {POSITIVE_SUM})</dd>
 			<dt style="width: 50%;">{L_RS_NEGATIVE_COUNT}:</dt> <dd style="width: 45%;">{NEGATIVE_COUNT} ({L_RS_POINTS}: {NEGATIVE_SUM})</dd>
-			<!-- IF S_TRUNCATE --><dt style="width: 50%;">&nbsp;</dt> <dd style="width: 45%;">[ <a href="#" onclick="jRS.clear({USER_ID}, 'user', 'detail'); return false;">{L_RS_CLEAR_USER}</a> ]</dd><!-- ENDIF -->
+			<!-- IF S_TRUNCATE --><dt style="width: 50%;">&nbsp;</dt> <dd style="width: 45%;">[ <a href="{U_CLEAR}">{L_RS_CLEAR_USER}</a> ]</dd><!-- ENDIF -->
 		</dl>
 
 		<span class="corners-bottom"><span></span></span></div>
@@ -126,8 +126,8 @@
 			<!-- IF S_RS_AVATAR -->
 				<div class="reputation-avatar">{reputation.AVATAR_IMG}</div>
 			<!-- ENDIF -->
-			<div class="reputation-detail"<!-- IF S_RS_AVATAR --> style="margin-left: 72px;"<!-- ENDIF -->>
-				<!-- IF reputation.S_DELETE --><a href="{reputation.U_DELETE"}" class="reputation-delete post" title="{L_DELETE}" onclick="jRS.del({reputation.REP_ID}, 'user'); return false;">{L_DELETE}</a><!-- ENDIF -->
+			<div class="reputation-detail">
+				<!-- IF reputation.S_DELETE --><a href="{reputation.U_DELETE}" class="reputation-delete" title="{L_DELETE}">{L_DELETE}</a><!-- ENDIF -->
 				<span style="float: left;"><strong>{reputation.USERNAME}</strong> &raquo; {reputation.TIME}</span>
 				<span class="reputation-rating {reputation.POINT_CLASS}">{reputation.POINT_VALUE}</span><br />
 				<span>{reputation.ACTION} {reputation.U_GO_TO_POST}</span><br />
