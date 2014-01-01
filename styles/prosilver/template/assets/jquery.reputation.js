@@ -231,6 +231,7 @@ function response(data, mode)
 					$(this).dequeue();
 				});
 			break;
+
 			case 'user':
 				$('#reputation-popup').empty().append('<div class="error">' + data.success_msg + '</div>').delay(800).fadeOut('fast').queue(function() {
 					$(this).empty();
@@ -239,6 +240,7 @@ function response(data, mode)
 					$(this).dequeue();
 				});
 			break;
+
 			case 'delete':
 				var post_id = data.post_id;
 				var poster_id = data.poster_id;
@@ -261,6 +263,7 @@ function response(data, mode)
 					$('#p' + post_id + ' .rate-bad-icon').removeClass('rated_good rated_bad');
 				}
 			break;
+
 			case 'clear':
 				if (data.clear_post)
 				{
@@ -286,12 +289,12 @@ function response(data, mode)
 					});
 					$('#profile' + poster_id + ' a').html(data.user_reputation);
 
-					$.each(post_ids, function() { 
-						$('#p' + post_ids + ' .post-reputation a').text(data.post_reputation);
-						$('#p' + post_ids + ' .post-reputation a').text(data.post_reputation);
-						$('#p' + post_ids + ' .post-reputation').removeClass('neutral negative positive').addClass(data.reputation_class);
-						$('#p' + post_ids + ' .rate-good-icon').removeClass('rated_good rated_bad');
-						$('#p' + post_ids + ' .rate-bad-icon').removeClass('rated_good rated_bad');
+					$.each(post_ids, function(i, post_id) { 
+						$('#p' + post_id + ' .post-reputation a').text(data.post_reputation);
+						$('#p' + post_id + ' .post-reputation a').text(data.post_reputation);
+						$('#p' + post_id + ' .post-reputation').removeClass('neutral negative positive').addClass(data.reputation_class);
+						$('#p' + post_id + ' .rate-good-icon').removeClass('rated_good rated_bad');
+						$('#p' + post_id + ' .rate-bad-icon').removeClass('rated_good rated_bad');
 					});
 				}
 			break;
