@@ -23,6 +23,9 @@ class details
 	/** @var \phpbb\db\driver\driver */
 	protected $db;
 
+	/** @var \phpbb\pagination */
+	protected $pagination;
+
 	/** @var \phpbb\template\template */
 	protected $template;
 
@@ -67,12 +70,13 @@ class details
 	* @param string $php_ext PHP extension
 	* @param string $reputation_table Name of the table uses to store reputations
 	*/
-	public function __construct(\phpbb\auth\auth $auth, \phpbb\config\config $config, \phpbb\controller\helper $controller_helper,  \phpbb\db\driver\driver $db, \phpbb\request\request $request, \phpbb\template\template $template, \phpbb\user $user, $reputation_display, $reputation_helper, $reputation_power, $phpbb_root_path, $php_ext, $reputations_table)
+	public function __construct(\phpbb\auth\auth $auth, \phpbb\config\config $config, \phpbb\controller\helper $controller_helper,  \phpbb\db\driver\driver $db, \phpbb\pagination $pagination, \phpbb\request\request $request, \phpbb\template\template $template, \phpbb\user $user, $reputation_display, $reputation_helper, $reputation_power, $phpbb_root_path, $php_ext, $reputations_table)
 	{
 		$this->auth = $auth;
 		$this->config = $config;
 		$this->db = $db;
 		$this->controller_helper = $controller_helper;
+		$this->pagination = $pagination;
 		$this->template = $template;
 		$this->user = $user;
 		$this->reputation_display = $reputation_display;
@@ -296,7 +300,7 @@ class details
 
 		// Generate pagination
 		$pagination_url = $this->controller_helper->url('reputation/' . $uid . '/' . $sort_key . '/' . $sort_dir . '/%d');
-		phpbb_generate_template_pagination($this->template, $pagination_url, 'pagination', '/%d', $total_reps, $this->config['rs_per_page'], $start);
+		$this->pagination->generate_template_pagination($pagination_url, 'pagination', '/%d', $total_reps, $this->config['rs_per_page'], $start);
 
 		$this->template->assign_vars(array(
 			'USER_ID'			=> $user_row['user_id'],
@@ -308,7 +312,7 @@ class details
 			'RANK_IMG'			=> $rank_img,
 			'REPUTATION_BOX'	=> ($user_row['user_reputation'] == 0) ? 'neutral' : (($user_row['user_reputation'] > 0) ? 'positive' : 'negative'),
 
-			'PAGE_NUMBER'		=> phpbb_on_page($this->template, $this->user, $pagination_url, $total_reps, $this->config['rs_per_page'], $start),
+			'PAGE_NUMBER'		=> $this->pagination->on_page($pagination_url, $total_reps, $this->config['rs_per_page'], $start),
 			'TOTAL_REPS'		=> $this->user->lang('LIST_REPUTATIONS', $total_reps),
 
 			'U_SORT_USERNAME'	=> $this->controller_helper->url('reputation/' . $uid . '/username/' . (($sort_key == 'username' && $sort_dir == 'asc') ? 'dsc' : 'asc')),

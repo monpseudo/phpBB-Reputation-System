@@ -21,6 +21,8 @@ class reputation_module
 
 		$user->add_lang_ext('pico88/reputation', 'reputation_system');
 
+		$pagination = $phpbb_container->get('pagination');
+
 		$start = request_var('start', 0);
 
 		$this->page_title = 'RS_TITLE';
@@ -126,12 +128,6 @@ class reputation_module
 				}
 				$db->sql_freeresult($result);
 
-				$rs_rank_title = $rs_rank_img = $rs_rank_img_src = $rs_rank_color = '';
-				if ($config['rs_ranks'])
-				{
-					$reputation->get_rs_rank($user->data['user_reputation'], $rs_rank_title, $rs_rank_img, $rs_rank_img_src, $rs_rank_color);
-				}
-
 				if ($config['rs_enable_power'])
 				{
 					$reputation_power = $phpbb_container->get('reputation.power');
@@ -204,6 +200,8 @@ class reputation_module
 				$sort_by_sql = $sort_order_sql = array();
 				reputation_sorting($sort_days, $sort_key, $sort_dir, $sort_by_sql, $sort_order_sql, $total, 'list', $reputation_table);
 
+				$start = $pagination->validate_start($start, $config['rs_per_page'], $total);
+
 				$limit_time_sql = ($sort_days) ? 'AND r.time >= ' . (time() - ($sort_days * 86400)) : '';
 
 				$sort_order_u = ($sort_order_sql[0] == 'u') ? ' LEFT JOIN ' . USERS_TABLE . ' u ON r.rep_from = u.user_id' : '';
@@ -255,13 +253,13 @@ class reputation_module
 				$pagination_url = $this->u_action . "&amp;st=$sort_days&amp;sk=$sort_key&amp;sd=$sort_dir";
 				$pagination_url .= (!empty($search_user_from)) ? "&amp;search_from=$search_user_from" : '';
 				$pagination_url .= (!empty($search_user_to)) ? "&amp;search_to=$search_user_to" : '';
-				phpbb_generate_template_pagination($template, $pagination_url, 'pagination', 'start', $total, $config['rs_per_page'], $start);
+				$pagination->generate_template_pagination($pagination_url, 'pagination', 'start', $total, $config['rs_per_page'], $start);
 
 				// Now display the page
 				$template->assign_vars(array(
 					'S_COMMENT'				=> $config['rs_enable_comment'] ? true : false,
 
-					'PAGE_NUMBER'			=> phpbb_on_page($template, $user, $pagination_url, $total, $config['rs_per_page'], $start),
+					'PAGE_NUMBER'			=> $pagination->on_page($pagination_url, $total, $config['rs_per_page'], $start),
 					'TOTAL_REPS'			=> $user->lang('LIST_REPUTATIONS', $total),
 
 					'S_NOTIFICATION'		=> ($config['rs_notification'] && $user->data['user_rs_notification']) ? true : false,
@@ -287,7 +285,7 @@ class reputation_module
 					{
 						foreach ($rep_id_list as $rep_id)
 						{
-							//$reputation->delete($rep_id);
+							$phpbb_container->get('reputation.manager')->delete($rep_id);
 
 							$success_msg = 'RS_POINTS_DELETED';
 						}
@@ -320,6 +318,8 @@ class reputation_module
 				$sort_key = $sort_dir = '';
 				$sort_by_sql = $sort_order_sql = array();
 				reputation_sorting($sort_days, $sort_key, $sort_dir, $sort_by_sql, $sort_order_sql, $total, 'given', $reputation_table);
+
+				$start = $pagination->validate_start($start, $config['rs_per_page'], $total);
 
 				$limit_time_sql = ($sort_days) ? 'AND r.time >= ' . (time() - ($sort_days * 86400)) : '';
 
@@ -373,7 +373,7 @@ class reputation_module
 				$pagination_url = $this->u_action . "&amp;st=$sort_days&amp;sk=$sort_key&amp;sd=$sort_dir";
 				$pagination_url .= (!empty($search_user_from)) ? "&amp;search_from=$search_user_from" : '';
 				$pagination_url .= (!empty($search_user_to)) ? "&amp;search_to=$search_user_to" : '';
-				phpbb_generate_template_pagination($template, $pagination_url, 'pagination', 'start', $total, $config['rs_per_page'], $start);
+				$pagination->generate_template_pagination($pagination_url, 'pagination', 'start', $total, $config['rs_per_page'], $start);
 
 				// Now display the page
 				$template->assign_vars(array(
@@ -382,7 +382,7 @@ class reputation_module
 					'S_COMMENT'				=> $config['rs_enable_comment'] ? true : false,
 					'S_DELETE_LINK'			=> ($auth->acl_get('u_rs_delete')) ? true : false,
 
-					'PAGE_NUMBER'			=> phpbb_on_page($template, $user, $pagination_url, $total, $config['rs_per_page'], $start),
+					'PAGE_NUMBER'			=> $pagination->on_page($pagination_url, $total, $config['rs_per_page'], $start),
 					'TOTAL_REPS'			=> $user->lang('LIST_REPUTATIONS', $total),
 				));
 			break;

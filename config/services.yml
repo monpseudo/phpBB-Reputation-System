@@ -68,6 +68,7 @@ services:
             - @config
             - @controller.helper
             - @dbal.conn
+            - @pagination
             - @request
             - @template
             - @user

@@ -28,6 +28,8 @@ class reputation_module
 
 		$user->add_lang_ext('pico88/reputation', 'reputation_system');
 
+		$pagination = $phpbb_container->get('pagination');
+
 		$this->page_title = 'RS_TITLE';
 
 		if ($request->is_set('delete'))
@@ -46,7 +48,7 @@ class reputation_module
 			{
 				foreach ($rep_id_list as $rep_id)
 				{
-					//$reputation->delete($rep_id);
+					$phpbb_container->get('reputation.manager')->delete($rep_id);
 
 					$success_msg = 'RS_POINTS_DELETED';
 				}
@@ -191,6 +193,8 @@ class reputation_module
 
 				reputation_sorting($sort_days, $sort_key, $sort_dir, $sort_by_sql, $sort_order_sql, $total, $row_from['user_id'], $row_to['user_id'], $reputation_table);
 
+				$start = $pagination->validate_start($start, $config['rs_per_page'], $total);
+
 				$sql_array = array(
 					'SELECT'	=> 'r.rep_id',
 					'FROM'		=> array($reputation_table => 'r'),
@@ -244,7 +248,7 @@ class reputation_module
 				{
 					$display = $phpbb_container->get('reputation.display');
 					$sql = $db->sql_build_query('SELECT', array(
-						'SELECT'	=> 'r.*, u.username as username_rep_from, u.user_colour as user_colour_rep_from, ru.username as username_rep_to, ru.user_colour as user_colour_rep_to, ru.user_reputation, p.post_id AS real_post_id, p.post_subject',
+						'SELECT'	=> 'r.*, u.username as username_rep_from, u.user_colour as user_colour_rep_from, ru.username as username_rep_to, ru.user_colour as user_colour_rep_to, ru.user_reputation, p.post_id AS real_post_id, p.forum_id, p.post_subject',
 						'FROM'		=> array($reputation_table => 'r'),
 						'LEFT_JOIN' => array(
 							array(
@@ -278,7 +282,7 @@ class reputation_module
 				$pagination_url = $this->u_action . "&amp;st=$sort_days&amp;sk=$sort_key&amp;sd=$sort_dir";
 				$pagination_url .= (!empty($search_user_from)) ? "&amp;search_from=$search_user_from" : '';
 				$pagination_url .= (!empty($search_user_to)) ? "&amp;search_to=$search_user_to" : '';
-				phpbb_generate_template_pagination($template, $pagination_url, 'pagination', 'start', $total, $config['rs_per_page'], $start);
+				$pagination->generate_template_pagination($pagination_url, 'pagination', 'start', $total, $config['rs_per_page'], $start);
 
 				// Now display the page
 				$template->assign_vars(array(
@@ -288,7 +292,7 @@ class reputation_module
 
 					'U_MCP_ACTION'			=> $this->u_action,
 
-					'PAGE_NUMBER'			=> phpbb_on_page($template, $user, $pagination_url, $total, $config['rs_per_page'], $start),
+					'PAGE_NUMBER'			=> $pagination->on_page($pagination_url, $total, $config['rs_per_page'], $start),
 					'TOTAL_REPS'			=> $user->lang('LIST_REPUTATIONS', $total),
 				));
 
